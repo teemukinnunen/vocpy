@@ -127,7 +127,8 @@ class LocalFeatures:
 
         return (f, d)
 
-    def imscaledown(self, I, max_img_size=numpy.inf):
+    @staticmethod
+    def imscaledown(I, max_img_size=numpy.inf):
         """Resizes an input image to smaller image if necessary"""
         # Resize image1
         if max_img_size < numpy.inf:
