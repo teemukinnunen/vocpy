@@ -106,8 +106,7 @@ class ImageCollection:
 
             # If the feature file already exists skip it
             if os.path.exists(localfeaturefile + '.key.npy') == False:
-                lf = LocalFeatures(imgFile,
-                                    self.ipdetector,
+                lf = LocalFeatures(self.ipdetector,
                                     self.lfdescriptor)
 
                 [f, d] = LocalFeatures.extractfeatures(self.imgDir + imgFile,
@@ -128,6 +127,7 @@ class ImageCollection:
 
     def localfeatures_read(self, debuglevel=0):
         """Load local features which are already extracted and return them """
+        #TODO: Does this function make any sense? It kinda seems to have no logic
         features = numpy.zeros((0,0))
         for imageName in self.imageNames:
             try:
@@ -249,6 +249,7 @@ class ImageCollection:
                     print "Couldnt concatenate codebook histogram to feature matrix"
                     print codebookhistograms.shape
                     print codebookhist.shape
+                    print codebook.codebooksize
                     if codebookhist.size == 0:
                         print "Codebookhistogram is zero size!! Which does not make any sense."
                         print "Changing codebookhistogram to 1 x CB size filled with zeros"
