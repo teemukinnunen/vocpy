@@ -1,5 +1,12 @@
 # vocpy - Simple Visual Object Categorisation tool for PYthon
 
+## Dependencies
+* numpy - http://www.numpy.org/
+* scipy - http://www.scipy.org/
+* opencv (cv2 module for python is needed) - http://opencv.org/
+* sklearn - http://scikit-learn.org/stable/
+
+
 ## Tools
 Tools-directory consists of usefull tools for extracting features and mathcing images.
 
