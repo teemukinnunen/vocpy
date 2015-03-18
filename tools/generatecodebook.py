@@ -7,6 +7,7 @@ import sys
 import argparse
 import numpy as np
 import glob
+import random
 
 # Append vocpy scripts
 sys.path.append('../')
@@ -58,6 +59,7 @@ def main(argv):
     parser.add_argument('-lf', '--descriptor', default="SIFT", help="Local feature descriptor")
     parser.add_argument('-k', '--codebooksize', default=1000, help='Size of the codebook')
     parser.add_argument('-cm', '--codebookmethod', default="MiniBatchKMeans", help="Codebook generation method")
+    parser.add_argument('-N', '--nimages', default=np.Inf, help="Number of images to be used for codebook generation (less images saves memory)")
 
     args = parser.parse_args()
 
@@ -76,6 +78,14 @@ def main(argv):
     else:
         # Read the given imageList
         imgList = open(args.imageList).read()
+
+    # If the number of images to be used for codebook generation is smaller
+    # than the number of images available, then choose randomly a subset
+    if int(args.nimages) < len(imgList):
+        random.shuffle(imgList)
+        imgList = random.sample(imgList, int(args.nimages))
+
+    print(len(imgList))
 
     # Read local features
     features = []
