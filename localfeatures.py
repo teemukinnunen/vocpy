@@ -219,3 +219,170 @@ class LocalFeatures:
         """Saves detected frames and descriptors of local features"""
         self.save_descriptors(dataDir, imgName, descriptors)
         self.save_frames(dataDir, imgName, descriptors)
+
+def match_images_spatially(image1, image2, detectorName='ORB',
+    descriptorName='BRIEF', bestMatches=5, validationThreshold=10,
+    mask1=None, mask2=None, boolDebugPlot=False):
+    """ Matches local feature spatially
+
+        Inputs:
+            image1                Filename (str) or Image (cv2 array)
+            image2                Filename (str) or Image (cv2 array)
+            detectorName          Detector (def. 'ORB')
+            descriptorName        Descriptor (def. 'BRIEF')
+            bestMatches           Number of best descriptor matches (def. 5)
+            validationThreshold   Maximal distance to accept match (def. 10)
+            mask1                 Mask for detecting features (def. None)
+            mask2                 Mask for detecting features (def. None)
+            boolDebugPlot         Show debug plot in the end (def. False)
+        Outputs:
+            H                     Estimated Homography between the pair of imgs
+            matchingFeatures      Indexes for matching features
+            descDistances         Descriptor distances of matching features
+    """
+    # Set default values before doing anything
+    H = numpy.zeros((3, 3))
+    matchingFeatures = []
+    descDistances = numpy.inf
+
+    if isinstance(image1, str):
+        image1 = cv2.imread(image1)
+    if isinstance(image2, str):
+        image2 = cv2.imread(image2)
+
+    # Make sure that the descriptor name is written in uppercase
+    descriptorName = descriptorName.upper()
+
+    # Extract local features
+    [ip1, lf1] = LocalFeatures.extractfeatures(image1,
+                                                    detector=detectorName,
+                                                    descriptor=descriptorName,
+                                                    max_img_size=numpy.inf,
+                                                    mask=mask1)
+    [ip2, lf2] = LocalFeatures.extractfeatures(image2,
+                                                    detector=detectorName,
+                                                    descriptor=descriptorName,
+                                                    max_img_size=numpy.inf,
+                                                    mask=mask2)
+
+    # Set local feature mathing method
+    if descriptorName.endswith('SIFT') or descriptorName == 'SURF':
+        binaryMatcher = False
+    else:
+        binaryMatcher = True
+
+    if binaryMatcher:
+        matcher = cv2.BFMatcher(cv2.NORM_HAMMING, False)
+    else:
+        matcher = cv2.BFMatcher(cv2.NORM_L2, False)
+
+    try:
+        # Match local feature descriptors
+        matches = matcher.knnMatch(lf1, lf2, bestMatches)
+    except:
+        print('Couldnt find any maching features. WTF!')
+        return [H, matchingFeatures, descDistances]
+
+    # Get max and min distances
+    min_dist = 100
+    max_dist = 0
+    for i in range(0, len(matches)):
+        if matches[i][0].distance > max_dist:
+            max_dist = matches[i][0].distance
+        if matches[i][0].distance < min_dist:
+            min_dist = matches[i][0].distance
+
+    # If min distance is close to zero, we need to do this hack
+    #if min_dist <= max_dist / 0.001: # THIS IS TOO STRICT IN 99% cases
+    if min_dist <= max_dist / 6:
+        min_dist = max_dist / 6
+
+    # Set threshold for accepting matches
+    matchingThreshold = min_dist * 3
+
+    # Filter out bad matches
+    good_matches = []
+    for i in range(0, len(matches)):
+        #for j in range(0, bestMatches):
+        for j in range(0, len(matches[i])):
+            if matches[i][j].distance <= matchingThreshold:
+                good_matches.append(matches[i][j])
+
+    # Generate a list of 2d points for spatial matching
+    scene1 = numpy.zeros((len(good_matches), 2))
+    scene2 = numpy.zeros((len(good_matches), 2))
+
+    for i in range(0, len(good_matches)):
+        scene1[i, :] = ip1[good_matches[i].queryIdx].pt
+        scene2[i, :] = ip2[good_matches[i].trainIdx].pt
+
+    try:
+        # Estimate homography transformation between the images using RANSAC
+        [H, mask] = cv2.findHomography(scene1, scene2, cv2.RANSAC)
+    except:
+        print('Problem occured during initial RANSAC step!')
+        return [H, matchingFeatures, descDistances]
+
+    # Fix scene1 points to a correct format for the cv2.perspectiveTransform
+    scene1 = numpy.array(scene1, dtype='float32')
+    [n, m] = numpy.shape(scene1)
+    scene1 = numpy.reshape(scene1, (1, n, m))
+
+    # Transform scene1 points to scene2
+    scene1t2 = cv2.perspectiveTransform(scene1, H)
+    scene1t2 = numpy.reshape(scene1t2, (n, m))
+    scene1t2 = numpy.array(scene1t2, dtype='float32')
+
+    # Match transformed points
+    matchingFeatures = []
+    descDistances = []
+    for i in range(0, len(scene1t2)):
+        # Compute spatial distance between the original point in scene2 and
+        # transformed point from scene1
+        dist = scipy.spatial.distance.euclidean(scene2[i, :], scene1t2[i, :])
+        if dist < validationThreshold:
+            # Set matching features
+            matchingFeatures.append((good_matches[i].queryIdx,
+                                     good_matches[i].trainIdx))
+            descDistances.append(good_matches[i].distance)
+
+
+    #if boolDebugPlot:
+    if boolDebugPlot:
+        plot_matching_features(image1, image2, ip1, ip2, matchingFeatures)
+
+    return [H, matchingFeatures, descDistances]
+
+def plot_matching_features(image1, image2, ip1, ip2, matches, figid=101):
+    """Plots matching features given as list of interest points ip1 and ip2"""
+
+    import pylab
+
+    [h1, w1, c1] = numpy.shape(image1)
+    [h2, w2, c2] = numpy.shape(image2)
+    I = numpy.zeros((max(h1, h2), w1 + w2))
+
+    # convert to graylevel by taking mean
+    I[0:h1, 0:w1] = numpy.reshape(numpy.mean(image1, 2), (h1, w1))
+    I[0:h2, w1:w1 + w2] = numpy.reshape(numpy.mean(image2, 2), (h2, w2))
+
+    # Set up figure
+    fh = pylab.figure(figid)
+    fh.clf()
+
+    # Dsiplay graylevel imgs
+    pylab.imshow(I)
+    pylab.gray()
+    pylab.axis('image')
+    pylab.axis('tight')
+    pylab.axis('off')
+
+    # Plot matches
+    #for i in range(0,len(matches)):
+    for match in matches:
+        [x1, y1] = ip1[match[0]].pt
+        [x2, y2] = ip2[match[1]].pt
+        x2 = x2 + w1
+        pylab.plot((x1, x2), (y1, y2), 'ro-')
+
+    pylab.show()
