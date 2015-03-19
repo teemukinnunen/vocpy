@@ -138,7 +138,7 @@ def main(argv):
         sys.stdout.write("Loading codebook histograms.. %d/%d\r" %
                             (imgid, len(imgList)))
         imageFile = imgList[imgid]
-        imageFilePath = os.path.join(imageFile[len(args.imageDir):])
+        imageFilePath = os.path.join(imageFile[len(args.imageDir)+1:])
         cbhistogram = codehistogram_load(imageFilePath, args.dataDir,
                                         args.detector, args.descriptor,
                                         args.codebookmethod, args.codebooksize)

@@ -24,11 +24,16 @@ def localfeatures_load(imageFile, dataDir, detector, descriptor):
                             imageFile)
 
     #TODO: Make sure that the file exists
-
-    # Store the file using numpy
-    ips = np.load(dataFile + '.ip.npy')
-    lfs = np.load(dataFile + '.lf.npy')
-
+    if os.path.exists(dataFile + '.lf.npy'):
+        ips = np.load(dataFile + '.ip.npy')
+        lfs = np.load(dataFile + '.lf.npy')
+    else:
+        print("Local featurefile does not exist: %s" % (dataFile + '.lf.npy'))
+        print("dataDir=%s" % dataDir)
+        print("imageFile=%s" % imageFile)
+        print("detector=%s" % detector)
+        print("descriptor=%s" % descriptor)
+        sys.exit(-1)
     return [ips, lfs]
 
 
@@ -103,7 +108,7 @@ def main(argv):
     for imgid in range(0, len(imgList)):
         sys.stdout.write("Generating codebook histograms.. %d/%d\r" % (imgid, len(imgList)))
         imageFile = imgList[imgid]
-        imageFilePath = os.path.join(imageFile[len(args.imageDir):])
+        imageFilePath = os.path.join(imageFile[len(args.imageDir)+1:])
         # Read local features
         [ips, lfs] = localfeatures_load(imageFilePath,
                                         args.dataDir,
