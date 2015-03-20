@@ -7,6 +7,7 @@
 #------------------------------------------------------------------------------
 
 import os
+import sys
 import numpy
 
 from localfeatures import LocalFeatures
@@ -64,6 +65,9 @@ class ImageCollection:
 
         self.imgDir = imgDir
         self.dataDir = dataDir
+        # fix data dir if necessary
+        if not self.imgDir.endswith(os.path.sep):
+            self.imgDir = self.imgDir + os.path.sep
 
         self.ipdetector = ipdetector
         self.lfdescriptor = lfdescriptor
@@ -93,16 +97,22 @@ class ImageCollection:
     # -------------------------------------------------------------------------
     # Local feature functions wrapped to the imagecollection class
     # -------------------------------------------------------------------------
+    def gen_featurefile_path(self, imgFile):
+        filepath = os.path.join(self.dataDir,
+                                'localfeatures',
+                                self.ipdetector + '+' + self.lfdescriptor,
+                                imgFile)
+        return filepath
+
     def localfeatures_extract(self,debuglevel=0):
         """Extract local features from a given imgDir"""
         imgIdx = 0
         nImgs = len(self.imageNames)
         for imgFile in self.imageNames:
             if debuglevel > 0:
-                print("Processing image %d of %d images." % (imgIdx, nImgs))
+                sys.stdout.write("Processing image %d of %d images." % (imgIdx, nImgs))
 
-            localfeaturefile = self.dataDir + '/localfeatures/' + imgFile + \
-                '.' + self.ipdetector + '.' + self.lfdescriptor
+            localfeaturefile = self.gen_featurefile_path(imgFile)
 
             # If the feature file already exists skip it
             if os.path.exists(localfeaturefile + '.key.npy') == False:
@@ -124,6 +134,8 @@ class ImageCollection:
                 numpy.save(localfeaturefile + '.desc', d)
                 numpy.save(localfeaturefile + '.key', f)
             imgIdx += 1
+        if debuglevel > 0:
+            print("\n\t * DONE!")
 
     def localfeatures_read(self, debuglevel=0):
         """Load local features which are already extracted and return them """
@@ -131,15 +143,13 @@ class ImageCollection:
         features = numpy.zeros((0,0))
         for imageName in self.imageNames:
             try:
-                #lf = LocalFeatures(imageName, self.ipdetector, self.lfdescriptor)
-                localfeaturefile = self.dataDir + '/localfeatures/' + imageName + \
-                '.' + self.ipdetector + '.' + self.lfdescriptor
+
+                localfeaturefile = self.gen_featurefile_path(imageName)
 
                 if not os.path.isfile(localfeaturefile + '.desc.npy'):
                     print(("Local feature file does not exist (%s)" % (localfeaturefile + '.desc.npy')))
 
-                if features == None or features.size == 0:
-                    #features = lf.load_descriptors(self.dataDir)
+                if features is None or features.size == 0:
                     features = features = numpy.load(localfeaturefile + '.desc.npy')
                 else:
                     features = numpy.vstack((features,
@@ -149,16 +159,9 @@ class ImageCollection:
 
         return features
 
-    def localfeatures_load_matlab(self, detector='hesaff', descriptor='gloh'):
-        """Reads local features stored in a matlab .mat format"""
-        for imageFile in self.imageNames:
-            lf = LocalFeatures(imageFile)
-            lf.load_featurespace(self.dataDir, detector, descriptor)
-            self.localfeatures.append(lf)
-
     # -------------------------------------------------------------------------
     # Codebook generation function wrapped inside the collection class
-    # -------------------------------------------kmeans = sc.KMeans(10)------------------------------
+    # -------------------------------------------------------------------------
     def codebook_generate(self, debuglevel=0):
         """Generates a codebook"""
         features = self.localfeatures_read()
@@ -171,16 +174,23 @@ class ImageCollection:
 
         return codebook
 
+    def gen_codebookfilepath(self, optionalFilename=""):
+        "Generates file path for the codebook file"
+        if len(optionalFilename) == 0:
+            codebookfile = os.path.join(self.dataDir,
+                                         'codebooks',
+                                         self.ipdetector + '+' + self.lfdescriptor,
+                                         self.codebookmethod + '+' + str(self.codebooksize) + '.npy')
+        else:
+            codebookfile = self.dataDir + '/codebooks/' + optionalFilename
+
+        return codebookfile
+
     def codebook_save(self, codebook, optionalFilename='', debuglevel=0):
         """Saves the generated cocebook"""
 
         # Define filename for the codebook
-        if len(optionalFilename) == 0:
-            codebookfile = self.dataDir + '/codebooks/' + self.ipdetector + '.' + \
-                self.lfdescriptor + '.' + self.codebookmethod + '.' + \
-                str(self.codebooksize) + '.npy'
-        else:
-            codebookfile = self.dataDir + '/codebooks/' + optionalFilename
+        codebookfile = self.gen_codebookfilepath(optionalFilename)
 
         codebookpath = os.path.dirname(codebookfile)
 
@@ -191,13 +201,9 @@ class ImageCollection:
 
     def codebook_load(self, optionalFilename='', debuglevel=0):
         """Loads the generated codebook"""
+
         # Define filename for the codebook
-        if len(optionalFilename) == 0:
-            codebookfile = self.dataDir + '/codebooks/' + self.ipdetector + '.' + \
-                self.lfdescriptor + '.' + self.codebookmethod + '.' + \
-                str(self.codebooksize) + '.npy'
-        else:
-            codebookfile = self.dataDir + '/codebooks/' + optionalFilename
+        codebookfile = self.gen_codebookfilepath(optionalFilename)
 
         if os.path.exists(codebookfile) == True:
             codebook = numpy.load(codebookfile)
@@ -211,6 +217,7 @@ class ImageCollection:
     # -------------------------------------------------------------------------
     def codebookhistograms_generate(self, codebook=[], debuglevel=0):
         """Generates codebook histograms for the image collection imgs"""
+
         # Load codebook
         if numpy.size(codebook) == 0:
             codebook = self.codebook_load()
@@ -223,12 +230,8 @@ class ImageCollection:
 
             # If codebookhistograms is not being loaded, we need to compute one
             if isLoaded == False:
-                #Lf = LocalFeatures(imageFile,
-                #                   self.ipdetector,
-                #                   self.lfdescriptor)
-                #desc = Lf.load_descriptors(self.dataDir)
-                localfeaturefile = self.dataDir + '/localfeatures/' + imageFile + \
-                '.' + self.ipdetector + '.' + self.lfdescriptor
+
+                localfeaturefile = self.gen_featurefile_path(imageFile)
                 desc = numpy.load(localfeaturefile + '.desc.npy')
 
                 # Compute codebookhistogram
@@ -246,39 +249,44 @@ class ImageCollection:
                     codebookhistograms = numpy.vstack((codebookhistograms,
                                                     codebookhist))
                 except:
-                    print "Couldnt concatenate codebook histogram to feature matrix"
-                    print codebookhistograms.shape
-                    print codebookhist.shape
-                    print codebook.codebooksize
+                    print("Couldnt concatenate codebook histogram to feature matrix")
+                    print(codebookhistograms.shape)
+                    print(codebookhist.shape)
+                    print(codebook.codebooksize)
                     if codebookhist.size == 0:
-                        print "Codebookhistogram is zero size!! Which does not make any sense."
-                        print "Changing codebookhistogram to 1 x CB size filled with zeros"
+                        print("Codebookhistogram has no elements!! Which does not make any sense.")
+                        print("Changing codebookhistogram to 1 x CB size filled with zeros")
                         codebookhist = numpy.zeros((1, codebookhistograms.shape[1]))
                         try:
                             codebookhistograms = numpy.vstack((codebookhistograms,
                                                     codebookhist))
                         except:
-                            print "Did not work out as planned... dyiing..."
+                            print("Did not work out as planned... dyiing...")
                             1/0
                     else:
                         try:
                             codebookhistograms = numpy.vstack((codebookhistograms,
                                                             codebookhist.transpose))
                         except:
-                            print "Still failing.. dying.."
+                            print("Still failing.. dying..")
                             1/0
 
         return codebookhistograms
 
+    def gen_codebookhistogram_filepath(self, imgFile):
+        "Generates filepath for the codebookhistogram file"
+
+        codebookhistfilepath = os.path.join(self.dataDir,
+                                            'codebookhistograms',
+                                            self.ipdetector + '+' + \
+                                            self.lfdescriptor,
+                                            self.codebookmethod + \
+                                            '+' + str(self.codebooksize),
+                                            imgFile + '.npy')
+
     def codebookhistograms_save(self, featurehist, imgFile, debuglevel=0):
         """Saves codebook histograms"""
-        codebookhistfile = self.dataDir + \
-                            '/codebookhistograms/' + \
-                            self.ipdetector + '/' + \
-                            self.lfdescriptor + '/' + \
-                            self.codebookmethod + \
-                            '/' + str(self.codebooksize) + \
-                            '/' + imgFile + '.npy'
+        codebookhistfile = self.gen_codebookhistogram_filepath(imgFile)
 
         codebookhistpath = os.path.dirname(codebookhistfile)
 
@@ -288,13 +296,7 @@ class ImageCollection:
 
     def codebookhistograms_load(self, imgFile, debuglevel=0):
         """Loads codebook histograms"""
-        codebookhistfile = self.dataDir + \
-                            '/codebookhistograms/' + \
-                            self.ipdetector + '/' + \
-                            self.lfdescriptor + '/' + \
-                            self.codebookmethod + \
-                            '/' + str(self.codebooksize) + \
-                            '/' + imgFile + '.npy'
+        codebookhistfile = self.gen_codebookhistogram_filepath(imgFile)
 
         f = numpy.zeros((1, self.codebooksize))
 
@@ -403,3 +405,18 @@ class ImageAnnotations:
             annotations.append(dirname)
             cid = cnt + 1
             return (cid, annotations)
+
+def read_imagedir_imagelist(imageDir, imageList):
+    if imageList is None:
+        # If user wants to extract features from a single image
+        if imageDir.endswith('.jpg') or imageDir.endswith('.png'):
+            imgList = [imageDir]
+        else:
+            # Get a list of images from the given directory
+            #TODO: replace this with os walk path
+            imgList = glob.glob(os.path.join(imageDir, '*', '*.jpg'))
+    else:
+        # Read the given imageList
+        imgList = open(imageList).readlines()
+
+    return imageList
