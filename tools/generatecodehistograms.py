@@ -9,65 +9,8 @@ import numpy as np
 import glob
 
 # Append vocpy scripts
-sys.path.append('../')
-from localfeatures import LocalFeatures as lf
-from codebook import Codebook
-
-
-def localfeatures_load(imageFile, dataDir, detector, descriptor):
-    """Loads local feature file from the data directory"""
-
-    # Construct a filename and path for the feature file
-    dataFile = os.path.join(dataDir,
-                            'localfeatures',
-                            detector + '+' + descriptor,
-                            imageFile)
-
-    #TODO: Make sure that the file exists
-    if os.path.exists(dataFile + '.lf.npy'):
-        ips = np.load(dataFile + '.ip.npy')
-        lfs = np.load(dataFile + '.lf.npy')
-    else:
-        print("Local featurefile does not exist: %s" % (dataFile + '.lf.npy'))
-        print("dataDir=%s" % dataDir)
-        print("imageFile=%s" % imageFile)
-        print("detector=%s" % detector)
-        print("descriptor=%s" % descriptor)
-        sys.exit(-1)
-    return [ips, lfs]
-
-
-def codebook_load(dataDir, detector, descriptor, codebookmethod, codebooksize):
-    """Saves codebook in the data directory"""
-    # Construct a filename and path for the feature file
-    dataFile = os.path.join(dataDir,
-                            'codebooks',
-                            detector + '+' + descriptor,
-                            codebookmethod + '+' + str(codebooksize) + '.npy')
-
-    # Create a directory for the codebook if needed
-    if not os.path.exists(dataFile):
-        print("Codebook-%s missing" % dataFile)
-        sys.exit(-1)
-
-    cbs = np.load(dataFile)
-
-    return cbs
-
-def codehistogram_save(codehistogram, imageFile, dataDir, detector, descriptor, codebookmethod, codebooksize):
-    "Saves codebook histogram into the dataDir"
-
-    dataFile = os.path.join(dataDir,
-                            'codehistograms',
-                            detector + '+' + descriptor,
-                            codebookmethod + '+' + str(codebooksize),
-                            imageFile + '.npy')
-
-    # Create a directory for the codebook if needed
-    if not os.path.exists(os.path.dirname(dataFile)):
-        os.makedirs(os.path.dirname(dataFile))
-
-    np.save(dataFile, codehistogram)
+sys.path.append('..' + os.path.sep)
+from datasets import *
 
 def main(argv):
     """Main function for running extract features script"""
@@ -86,46 +29,17 @@ def main(argv):
 
     print(args)
 
-    # Init codebook object
-    codebook = Codebook(detector=args.detector,
-                        descriptor=args.descriptor,
-                        codebooksize=args.codebooksize,
-                        codebookmethod=args.codebookmethod)
+    # Get imageSet object, which takes actual processing of features etc
+    imageSet = ImageCollection(imgDir=args.imageDir,
+                                dataDir=args.dataDir,
+                                ipdetector=args.detector,
+                                lfdescriptor=args.descriptor,
+                                codebookmethod=args.codebookmethod,
+                                codebooksize=args.codebooksize)
 
-    # Get a list of images
-    if args.imageList is None:
-        # Get a list of images from the given directory
-        imgList = glob.glob(args.imageDir + '*/*.jpg')
-    else:
-        # Read the given imageList
-        imgList = open(args.imageList).read()
-
-    # Load codebook
-    cbs = codebook_load(args.dataDir, args.detector, args.descriptor, args.codebookmethod, args.codebooksize)
-    codebook.codebook = cbs
-
-    # Compute and save codebook histograms
-    for imgid in range(0, len(imgList)):
-        sys.stdout.write("Generating codebook histograms.. %d/%d\r" % (imgid, len(imgList)))
-        imageFile = imgList[imgid]
-        imageFilePath = os.path.join(imageFile[len(args.imageDir)+1:])
-        # Read local features
-        [ips, lfs] = localfeatures_load(imageFilePath,
-                                        args.dataDir,
-                                        args.detector,
-                                        args.descriptor)
-        # Compute codebook histogram
-        codehistogram = codebook.compute_histogram(lfs)
-
-        codehistogram_save(codehistogram,
-                            imageFilePath,
-                            args.dataDir,
-                            args.detector,
-                            args.descriptor,
-                            args.codebookmethod,
-                            args.codebooksize)
-
-    print("\n\t* DONE!")
+    print("Generating codebookhistograms")
+    imageSet.codebookhistograms_generate()
+    print("DONE!")
 
 if __name__ == '__main__':
     main(sys.argv[1:])
