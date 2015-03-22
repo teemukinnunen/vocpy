@@ -14,7 +14,7 @@ import pylab
 
 # Append vocpy scripts
 sys.path.append('../')
-from localfeatures import *
+from datasets import *
 
 def codehistogram_load(imageFile, dataDir, detector, descriptor, codebookmethod, codebooksize):
     "Saves codebook histogram into the dataDir"
@@ -51,27 +51,24 @@ def main(argv):
 
     args = parser.parse_args()
 
-    # Get a list of images
-    if args.imageList is None:
-        # Get a list of images from the given directory
-        imgList = glob.glob(args.imageDir + '*/*.jpg')
-    else:
-        # Read the given imageList
-        imgList = open(args.imageList).readlines()
+    # Get imageSet object, which takes actual processing of features etc
+    imageSet = ImageCollection(imgDir=args.imageDir,
+                                dataDir=args.dataDir,
+                                ipdetector=args.detector,
+                                lfdescriptor=args.descriptor,
+                                codebookmethod=args.codebookmethod,
+                                codebooksize=args.codebooksize)
+
 
     # Number of images
-    N = len(imgList)
+    N = len(imageSet.imageNames)
 
     # Load codebook histograms
     cbm = np.zeros((N, args.codebooksize))
     for imgid in range(0, N):
         sys.stdout.write("Loading codebook histograms.. %d/%d\r" %
-                            (imgid, len(imgList)))
-        imageFile = imgList[imgid]
-        imageFilePath = os.path.join(imageFile[len(args.imageDir)+1:])
-        cbhistogram = codehistogram_load(imageFilePath, args.dataDir,
-                                        args.detector, args.descriptor,
-                                        args.codebookmethod, args.codebooksize)
+                            (imgid, N))
+        [cbhistogram, ok] = imageSet.codebookhistograms_load(imageSet.imageNames[imgid])
         cbm[imgid, :] = cbhistogram
     print("\n\t * Done!")
 
@@ -85,26 +82,24 @@ def main(argv):
 
     for i in range(0, N):
         if args.debug > 0:
-            I = pylab.imread(imgList[i])
+            I = pylab.imread(os.path.join(args.imageDir, imageSet.imageNames[i]))
             h.add_subplot(5,5,1)
             pylab.imshow(I)
             pylab.axis('off')
         for j in range(1, 25):
-            sys.stdout.write("%s (d=%1.3f) " % (imgList[idx[i,j]][len(args.imageDir)+1:], D[i,idx[i,j]]))
+            sys.stdout.write("%s (d=%1.3f) " % (imageSet.imageNames[idx[i,j]], D[i,idx[i,j]]))
             if args.debug > 0:
                 h.add_subplot(5,5,j+1)
-                I = pylab.imread(imgList[idx[i,j]])
+                I = pylab.imread(os.path.join(args.imageDir, imageSet.imageNames[idx[i,j]]))
                 pylab.imshow(I)
                 pylab.axis('off')
         sys.stdout.write('\n')
         if args.debug > 0:
-            #pylab.draw_now()
             pylab.pause(0.01)
-            pylab.savefig('/home/tekinnun/Pictures/work/visualisations/flickr_temporal_views/results/1/'+imgList[idx[i,j]][len(args.imageDir)+1:],bbox_inches='tight')
-    # Match local features using spatial verification methods
-    #[H, matchingFeatures, descDistances] = matchimages(args.image1, args.image2,
-    #                                            args.detector, args.descriptor,
-    #                                            args.debug>0)
+            resultfile = os.path.join(args.dataDir, 'results','nearest_neighbours_'+imageSet.imageNames[i])
+            if not os.path.exists(os.path.dirname(resultfile)):
+                os.makedirs(os.path.dirname(resultfile))
+            pylab.savefig(resultfile,bbox_inches='tight')
 
 # MAIN
 if __name__ == '__main__':
