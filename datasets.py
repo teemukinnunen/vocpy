@@ -284,6 +284,8 @@ class ImageCollection:
                                             '+' + str(self.codebooksize),
                                             imgFile + '.npy')
 
+        return codebookhistfilepath
+
     def codebookhistograms_save(self, featurehist, imgFile, debuglevel=0):
         """Saves codebook histograms"""
         codebookhistfile = self.gen_codebookhistogram_filepath(imgFile)
@@ -296,6 +298,7 @@ class ImageCollection:
 
     def codebookhistograms_load(self, imgFile, debuglevel=0):
         """Loads codebook histograms"""
+
         codebookhistfile = self.gen_codebookhistogram_filepath(imgFile)
 
         f = numpy.zeros((1, self.codebooksize))
