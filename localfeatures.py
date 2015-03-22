@@ -22,10 +22,6 @@ class LocalFeatures:
     detector = 0
     descriptor = 0
 
-    # Outputs
-    #frames = []
-    #descriptors = []
-
     def __init__(self, detector='FAST', descriptor='FREAK'):
         """Initialise Localfeature object"""
 
@@ -52,11 +48,10 @@ class LocalFeatures:
             # Read image
             I = cv2.imread(image)
 
-        I = LocalFeatures.imscaledown(self, I, max_img_size)
+        I = LocalFeatures.imscaledown(I, max_img_size)
 
         # Detect features / interest points
-        # TODO: Fix mask
-        f = self.detector.detect(I) #, mask)
+        f = self.detector.detect(I)
 
         # And describe features
         [f, d] = self.descriptor.compute(I, f)
