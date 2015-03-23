@@ -94,6 +94,17 @@ class ImageCollection:
                     imgFullpath = os.path.join(root, file)
                     self.imageNames.append(imgFullpath[len(self.imgDir):])
 
+
+    def read_imagelist(self, imageListFile):
+        "Read a text file containing a list of images"
+        if os.path.exists(imageListFile):
+            # Read the given imageList
+            #imgList = open(imageListFile, 'r').read().split('\n')
+            imgList = open(imageListFile).read().splitlines()
+            self.imageNames = imgList
+        else:
+            print("Image list file %s does not exist!" % imageListFile)
+
     # -------------------------------------------------------------------------
     # Local feature functions wrapped to the imagecollection class
     # -------------------------------------------------------------------------
@@ -110,7 +121,7 @@ class ImageCollection:
         nImgs = len(self.imageNames)
         for imgFile in self.imageNames:
             if debuglevel > 0:
-                sys.stdout.write("Processing image %d of %d images." % (imgIdx, nImgs))
+                sys.stdout.write("Processing image %d of %d images.\r" % (imgIdx+1, nImgs))
 
             localfeaturefile = self.gen_featurefile_path(imgFile)
 
@@ -119,20 +130,26 @@ class ImageCollection:
                 lf = LocalFeatures(self.ipdetector,
                                     self.lfdescriptor)
 
-                [f, d] = LocalFeatures.extractfeatures(self.imgDir + imgFile,
-                                                self.ipdetector,
-                                                self.lfdescriptor)
+                imgPath = os.path.join(self.imgDir,imgFile)
+                if os.path.exists(imgPath):
+                    # Extract local features from the image
+                    [f, d] = lf.extract(imgPath)
 
-                localfeaturefiledir = os.path.dirname(localfeaturefile)
+                    localfeaturefiledir = os.path.dirname(localfeaturefile)
 
-                if os.path.exists(localfeaturefiledir) == False:
-                    os.makedirs(localfeaturefiledir)
+                    if os.path.exists(localfeaturefiledir) == False:
+                        os.makedirs(localfeaturefiledir)
 
-                # Convert keypoints objects to matrix
-                f = lf.keypoints2framematrix(f)
+                    # Convert keypoints objects to matrix
+                    f = lf.keypoints2framematrix(f)
 
-                numpy.save(localfeaturefile + '.desc', d)
-                numpy.save(localfeaturefile + '.key', f)
+                    numpy.save(localfeaturefile + '.desc', d)
+                    numpy.save(localfeaturefile + '.key', f)
+                else:
+                    if debuglevel > 0:
+                        sys.stdout.write("\n")
+                    print("Imagefile %s does not exist!" % imgPath)
+
             imgIdx += 1
         if debuglevel > 0:
             print("\n\t * DONE!")
@@ -408,18 +425,3 @@ class ImageAnnotations:
             annotations.append(dirname)
             cid = cnt + 1
             return (cid, annotations)
-
-def read_imagedir_imagelist(imageDir, imageList):
-    if imageList is None:
-        # If user wants to extract features from a single image
-        if imageDir.endswith('.jpg') or imageDir.endswith('.png'):
-            imgList = [imageDir]
-        else:
-            # Get a list of images from the given directory
-            #TODO: replace this with os walk path
-            imgList = glob.glob(os.path.join(imageDir, '*', '*.jpg'))
-    else:
-        # Read the given imageList
-        imgList = open(imageList).readlines()
-
-    return imageList

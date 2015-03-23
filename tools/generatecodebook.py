@@ -57,7 +57,8 @@ def main(argv):
     parser.add_argument('-lf', '--descriptor', default="SIFT", help="Local feature descriptor")
     parser.add_argument('-k', '--codebooksize', default=1000, help='Size of the codebook')
     parser.add_argument('-cm', '--codebookmethod', default="MiniBatchKMeans", help="Codebook generation method")
-    parser.add_argument('-N', '--nimages', default=np.Inf, help="Number of images to be used for codebook generation (less images saves memory)")
+    parser.add_argument('-N', '--nimages', default=-1, help="Number of images to be used for codebook generation (less images saves memory)")
+    parser.add_argument('--debug', default=0, help="Debug level")
 
     args = parser.parse_args()
 
@@ -71,9 +72,14 @@ def main(argv):
                                 codebookmethod=args.codebookmethod,
                                 codebooksize=args.codebooksize)
 
-    N = len(imageSet.imageNames)
+    # If user gave as an image list file, we must update the imageSet
+    if args.imageList is not None:
+        imageSet.read_imagelist(args.imageList)
 
-    if N > int(args.nimages):
+    # Choose random population for the codebook generation if we need to save
+    # some memory
+    N = len(imageSet.imageNames)
+    if N > int(args.nimages) and int(args.nimages) > 0:
         imageSet.imageNames = random.sample(imageSet.imageNames, int(args.nimages))
         N = len(imageSet.imageNames)
 

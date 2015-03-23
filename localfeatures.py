@@ -2,6 +2,7 @@
 
 # OS stuff
 import os
+import sys
 # Numerical python
 import numpy
 # For matching local features
@@ -46,7 +47,11 @@ class LocalFeatures:
             I = image
         else:
             # Read image
-            I = cv2.imread(image)
+            if os.path.exists(image):
+                I = cv2.imread(image)
+            else:
+                print("Image file missing %s" % image)
+                sys.exit(-1)
 
         I = LocalFeatures.imscaledown(I, max_img_size)
 

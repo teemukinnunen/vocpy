@@ -24,6 +24,7 @@ def main(argv):
     parser.add_argument('-lf', '--descriptor', default="SIFT", help="Local feature descriptor")
     parser.add_argument('-k', '--codebooksize', default=1000, help='Size of the codebook')
     parser.add_argument('-cm', '--codebookmethod', default="MiniBatchKMeans", help="Codebook generation method")
+    parser.add_argument('--debug', default=0, help="Debug level")
 
     args = parser.parse_args()
 
@@ -36,6 +37,10 @@ def main(argv):
                                 lfdescriptor=args.descriptor,
                                 codebookmethod=args.codebookmethod,
                                 codebooksize=args.codebooksize)
+
+    # If user gave as an image list file, we must update the imageSet
+    if args.imageList is not None:
+        imageSet.read_imagelist(args.imageList)
 
     print("Generating codebookhistograms")
     imageSet.codebookhistograms_generate()

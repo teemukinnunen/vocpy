@@ -29,6 +29,11 @@ def main(argv):
                                 ipdetector=args.detector,
                                 lfdescriptor=args.descriptor)
 
+    # If user gave as an image list file, we must update the imageSet
+    if args.imageList is not None:
+        imageSet.read_imagelist(args.imageList)
+
+    # Finally, extract local features from given images
     imageSet.localfeatures_extract(debuglevel=args.debug)
 
 if __name__ == '__main__':
