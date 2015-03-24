@@ -156,21 +156,32 @@ class ImageCollection:
 
     def localfeatures_read(self, debuglevel=0):
         """Load local features which are already extracted and return them """
-        #TODO: Does this function make any sense? It kinda seems to have no logic
+        # Initialize feature matrix
         features = numpy.zeros((0,0))
+        # Read local features from each image in the ImageCollection
         for imageName in self.imageNames:
+            if debuglevel > 0:
+                print("Feature matrix size: %d x %d" % (features.shape[0],
+                                                        features.shape[1]))
             try:
-
+                # Define name for the local feature file
                 localfeaturefile = self.gen_featurefile_path(imageName)
 
-                if not os.path.isfile(localfeaturefile + '.desc.npy'):
-                    print(("Local feature file does not exist (%s)" % (localfeaturefile + '.desc.npy')))
-
-                if features is None or features.size == 0:
-                    features = features = numpy.load(localfeaturefile + '.desc.npy')
+                # Make sure that the local feature descriptor file exist
+                if os.path.exists(localfeaturefile + '.desc.npy'):
+                    # Read local feature descriptor
+                    imgFeatures = numpy.load(localfeaturefile + '.desc.npy')
+                    # If the feature matrix is not empty then add loaded features
+                    # on the top of the matrix
+                    if features.shape[0] > 0:
+                        features = numpy.vstack((imgFeatures, features))
+                    else:
+                        # If the feature matrix is empty then set it to
+                        # loaded image features
+                        features = imgFeatures
+                        features = numpy.vstack((imgFeatures, features))
                 else:
-                    features = numpy.vstack((features,
-                                            numpy.load(localfeaturefile + '.desc.npy')))
+                    print(("Local feature file does not exist (%s)" % (localfeaturefile + '.desc.npy')))
             except ValueError:
                 print(("Problems with image: " + imageName))
 
@@ -181,7 +192,7 @@ class ImageCollection:
     # -------------------------------------------------------------------------
     def codebook_generate(self, debuglevel=0):
         """Generates a codebook"""
-        features = self.localfeatures_read()
+        features = self.localfeatures_read(debuglevel=debuglevel)
         codebook = Codebook(codebookmethod=self.codebookmethod,
                             codebooksize=self.codebooksize)
 

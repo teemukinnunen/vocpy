@@ -83,7 +83,7 @@ def main(argv):
         imageSet.imageNames = random.sample(imageSet.imageNames, int(args.nimages))
         N = len(imageSet.imageNames)
 
-    imageSet.codebook_generate()
+    imageSet.codebook_generate(debuglevel=int(args.debug))
 
 if __name__ == '__main__':
     main(sys.argv[1:])
