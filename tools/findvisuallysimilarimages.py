@@ -59,6 +59,9 @@ def main(argv):
                                 codebookmethod=args.codebookmethod,
                                 codebooksize=args.codebooksize)
 
+    # If user gave as an image list file, we must update the imageSet
+    if args.imageList is not None:
+        imageSet.read_imagelist(args.imageList)
 
     # Number of images
     N = len(imageSet.imageNames)
@@ -68,7 +71,7 @@ def main(argv):
     for imgid in range(0, N):
         sys.stdout.write("Loading codebook histograms.. %d/%d\r" %
                             (imgid, N))
-        [cbhistogram, ok] = imageSet.codebookhistograms_load(imageSet.imageNames[imgid])
+        cbhistogram = imageSet.codebookhistograms_load(imageSet.imageNames[imgid])
         cbm[imgid, :] = cbhistogram
     print("\n\t * Done!")
 
@@ -83,6 +86,7 @@ def main(argv):
     for i in range(0, N):
         if args.debug > 0:
             I = pylab.imread(os.path.join(args.imageDir, imageSet.imageNames[i]))
+            h.clf()
             h.add_subplot(5,5,1)
             pylab.imshow(I)
             pylab.axis('off')

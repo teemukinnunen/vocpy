@@ -14,62 +14,9 @@ from sklearn.cluster import KMeans
 
 # Append vocpy scripts
 sys.path.append('../')
-from localfeatures import LocalFeatures as lf
-from codebook import Codebook
-
-
-def localfeatures_load(imageFile, dataDir, detector, descriptor):
-    """Loads local feature file from the data directory"""
-
-    # Construct a filename and path for the feature file
-    dataFile = os.path.join(dataDir,
-                            'localfeatures',
-                            detector + '+' + descriptor,
-                            imageFile)
-
-    #TODO: Make sure that the file exists
-
-    # Store the file using numpy
-    ips = np.load(dataFile + '.ip.npy')
-    lfs = np.load(dataFile + '.lf.npy')
-
-    return [ips, lfs]
-
-
-def codebook_load(dataDir, detector, descriptor, codebookmethod, codebooksize):
-    """Saves codebook in the data directory"""
-    # Construct a filename and path for the feature file
-    dataFile = os.path.join(dataDir,
-                            'codebooks',
-                            detector + '+' + descriptor,
-                            codebookmethod + '+' + str(codebooksize) + '.npy')
-
-    # Create a directory for the codebook if needed
-    if not os.path.exists(dataFile):
-        print("Codebook-%s missing" % dataFile)
-        sys.exit(-1)
-
-    cbs = np.load(dataFile)
-
-    return cbs
-
-def codehistogram_load(imageFile, dataDir, detector, descriptor, codebookmethod, codebooksize):
-    "Saves codebook histogram into the dataDir"
-
-    dataFile = os.path.join(dataDir,
-                            'codehistograms',
-                            detector + '+' + descriptor,
-                            codebookmethod + '+' + str(codebooksize),
-                            imageFile + '.npy')
-
-    # Create a directory for the codebook if needed
-    if not os.path.exists(dataFile):
-        print("Codebook histogramfile %s is missing! x/" % dataFile)
-        sys.exit(-1)
-
-    codehistogram = np.load(dataFile)
-    return codehistogram
-
+#from localfeatures import LocalFeatures as lf
+#from codebook import Codebook
+from datasets import *
 
 def codebookhistogram_matrix_save(cbm, imgList, dataDir, detector, descriptor, codebookmethod, codebooksize):
     "Saves codebook histograms matrix"
@@ -116,16 +63,20 @@ def main(argv):
 
     args = parser.parse_args()
 
-    # Get a list of images
-    if args.imageList is None:
-        # Get a list of images from the given directory
-        imgList = glob.glob(args.imageDir + '*/*.jpg')
-    else:
-        # Read the given imageList
-        imgList = open(args.imageList).readlines()
+    # Get imageSet object, which takes actual processing of features etc
+    imageSet = ImageCollection(imgDir=args.imageDir,
+                                dataDir=args.dataDir,
+                                ipdetector=args.detector,
+                                lfdescriptor=args.descriptor,
+                                codebookmethod=args.codebookmethod,
+                                codebooksize=args.codebooksize)
+
+    # If user gave as an image list file, we must update the imageSet
+    if args.imageList is not None:
+        imageSet.read_imagelist(args.imageList)
 
     # Number of images
-    N = len(imgList)
+    N = len(imageSet.imageNames)
 
     # Try to load codebook histogram matrix
     cbm = codebookhistogram_matrix_load(args.dataDir, args.detector,
@@ -136,16 +87,13 @@ def main(argv):
     cbm = np.zeros((N, args.codebooksize))
     for imgid in range(0, N):
         sys.stdout.write("Loading codebook histograms.. %d/%d\r" %
-                            (imgid, len(imgList)))
-        imageFile = imgList[imgid]
-        imageFilePath = os.path.join(imageFile[len(args.imageDir)+1:])
-        cbhistogram = codehistogram_load(imageFilePath, args.dataDir,
-                                        args.detector, args.descriptor,
-                                        args.codebookmethod, args.codebooksize)
+                            (imgid, N))
+        cbhistogram = imageSet.codebookhistograms_load(imageSet.imageNames[imgid])
         cbm[imgid, :] = cbhistogram
     print("\n\t * Done!")
+
     # Save because people typically hate to wait :)
-    codebookhistogram_matrix_save(cbm, imgList, args.dataDir,
+    codebookhistogram_matrix_save(cbm, imageSet.imageNames, args.dataDir,
                                     args.detector, args.descriptor,
                                     args.codebookmethod, args.codebooksize)
 
@@ -164,7 +112,7 @@ def main(argv):
     km.fit(cbm)
     print("Cluster labels for the images")
     for imgid in range(0, N):
-        print("%s \t %d" % (imgList[imgid], km.labels_[imgid]))
+        print("%s \t %d" % (imageSet.imageNames[imgid], km.labels_[imgid]))
 
 
 if __name__ == '__main__':
