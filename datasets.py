@@ -254,10 +254,10 @@ class ImageCollection:
 
         for imageFile in self.imageNames:
             # Try to load codebookhistogram
-            [codebookhist, isLoaded] = self.codebookhistograms_load(imageFile)
+            codebookhist= self.codebookhistograms_load(imageFile)
 
             # If codebookhistograms is not being loaded, we need to compute one
-            if isLoaded == False:
+            if codebookhist is None:
 
                 localfeaturefile = self.gen_featurefile_path(imageFile)
                 desc = numpy.load(localfeaturefile + '.desc.npy')
@@ -332,10 +332,10 @@ class ImageCollection:
         f = numpy.zeros((1, self.codebooksize))
 
         if os.path.exists(codebookhistfile) == False:
-            return (f, False)
+            return None
         else:
             f = numpy.load(codebookhistfile)
-            return (f, True)
+            return f
 
 
 class ImageAnnotations:
