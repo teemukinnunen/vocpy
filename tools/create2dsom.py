@@ -9,7 +9,7 @@ import os
 import sys
 import argparse
 import numpy as np
-import glob
+import time
 import pylab
 import sklearn.preprocessing
 import scipy.misc as sm
@@ -111,8 +111,8 @@ def main(argv):
 
     ## Visualize image set using 2D SOM
     # Train SOM
-    isom = SOM('imagemap', cbm, mapsize = (int(args.SOMX), int(args.SOMY)))
-    isom.train(trainlen=5)
+    isom = SOM('imagemap', cbm, mapsize = (int(args.SOMY), int(args.SOMX)))
+    isom.train() #trainlen=5)
     # Map images to xy on the map
     xy = isom.ind_to_xy(isom.bmu[0])
     # Sort images based on their distance to the map to find the most suitable
@@ -136,7 +136,16 @@ def main(argv):
             subimage = sm.imresize(subimage, (PICRES, PICRES))
             I[offset_y:offset_y+PICRES,offset_x:offset_x+PICRES,:] = subimage
     pylab.imshow(I)
-    pylab.pause(60)
+    pylab.pause(0.1)
+    resultFile = os.path.join(args.dataDir,
+                                'results'
+                                '2d_som_' +
+                                str(args.SOMY) + 'x' + str(args.SOMY) +
+                                time.strftime('%Y-%m-%d_%H%M') + '.jpg')
+    if not os.path.exists(os.path.dirname(resultFile)):
+        os.makedirs(os.path.dirname(resultFile))
+    sm.imsave(resultFile, I)
+    raw_input("Press [enter] to quit")
 
 
 if __name__ == '__main__':
