@@ -122,7 +122,8 @@ def main(argv):
     imgmap = np.zeros(isom.mapsize)-1
     for i in idx:
         if imgmap[xy[i,0],xy[i,1]] == -1:
-            imgmap[xy[i,0],xy[i,1]] = idx[i]
+            imgmap[xy[i,0],xy[i,1]] = i
+
     # Generate SOM image
     I = np.zeros((isom.mapsize[0]*PICRES, isom.mapsize[1]*PICRES, 3), dtype=np.uint8)
     for sy in range(0, isom.mapsize[0]):
@@ -131,20 +132,23 @@ def main(argv):
             offset_x = sx * PICRES
             #
             imgid = int(imgmap[sy,sx])
-            subimage = pylab.imread(os.path.join(args.imageDir,
+            # If the cell is set to something
+            if imgid > -1:
+                subimage = pylab.imread(os.path.join(args.imageDir,
                                                 imageSet.imageNames[imgid]))
-            subimage = sm.imresize(subimage, (PICRES, PICRES))
-            I[offset_y:offset_y+PICRES,offset_x:offset_x+PICRES,:] = subimage
+                subimage = sm.imresize(subimage, (PICRES, PICRES))
+                I[offset_y:offset_y+PICRES,offset_x:offset_x+PICRES,:] = subimage
     pylab.imshow(I)
     pylab.pause(0.1)
     resultFile = os.path.join(args.dataDir,
                                 'results',
                                 '2d_som_' +
                                 str(args.SOMY) + 'x' + str(args.SOMY) +
-                                time.strftime('%Y-%m-%d_%H%M') + '.jpg')
+                                time.strftime('_time_%Y-%m-%d_%H%M') + '.jpg')
     if not os.path.exists(os.path.dirname(resultFile)):
         os.makedirs(os.path.dirname(resultFile))
     sm.imsave(resultFile, I)
+    print(("Resultfile saved in: %s" % resultFile))
     raw_input("Press [enter] to quit")
 
 
