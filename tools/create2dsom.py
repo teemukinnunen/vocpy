@@ -111,8 +111,11 @@ def main(argv):
 
     ## Visualize image set using 2D SOM
     # Train SOM
-    isom = SOM('imagemap', cbm, mapsize = (int(args.SOMY), int(args.SOMX)))
-    isom.train() #trainlen=5)
+    isom = SOM('imagemap', cbm, norm_method='none', mapsize = (int(args.SOMY), int(args.SOMX)))
+    #TODO: Mapshape is not implemented yet in sompy
+    #isom.set_topology(mapsize = (int(args.SOMY), int(args.SOMX)),
+    #                    mapshape = 'toroid')
+    isom.train()
     # Map images to xy on the map
     xy = isom.ind_to_xy(isom.bmu[0])
     # Sort images based on their distance to the map to find the most suitable
