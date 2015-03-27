@@ -138,7 +138,7 @@ def main(argv):
     pylab.imshow(I)
     pylab.pause(0.1)
     resultFile = os.path.join(args.dataDir,
-                                'results'
+                                'results',
                                 '2d_som_' +
                                 str(args.SOMY) + 'x' + str(args.SOMY) +
                                 time.strftime('%Y-%m-%d_%H%M') + '.jpg')
