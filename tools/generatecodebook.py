@@ -55,10 +55,10 @@ def main(argv):
     parser.add_argument('-il', '--imageList', default=None, help='Input image list file')
     parser.add_argument('-ip', '--detector', default="HARRIS", help='Local feature detector (HARRIS, SIFT, ...)')
     parser.add_argument('-lf', '--descriptor', default="SIFT", help="Local feature descriptor")
-    parser.add_argument('-k', '--codebooksize', default=1000, help='Size of the codebook')
+    parser.add_argument('-k', '--codebooksize', type=int, default=1000, help='Size of the codebook')
     parser.add_argument('-cm', '--codebookmethod', default="MiniBatchKMeans", help="Codebook generation method")
-    parser.add_argument('-N', '--nimages', default=-1, help="Number of images to be used for codebook generation (less images saves memory)")
-    parser.add_argument('--debug', default=0, help="Debug level")
+    parser.add_argument('-N', '--nimages', type=int, default=-1, help="Number of images to be used for codebook generation (less images saves memory)")
+    parser.add_argument('--debug', type=int, default=0, help="Debug level")
 
     args = parser.parse_args()
 
@@ -70,7 +70,7 @@ def main(argv):
                                 ipdetector=args.detector,
                                 lfdescriptor=args.descriptor,
                                 codebookmethod=args.codebookmethod,
-                                codebooksize=args.codebooksize)
+                                codebooksize=int(args.codebooksize))
 
     # If user gave as an image list file, we must update the imageSet
     if args.imageList is not None:

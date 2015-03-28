@@ -61,13 +61,13 @@ def main(argv):
     parser.add_argument('-il', '--imageList', default=None, help='Input image list file')
     parser.add_argument('-ip', '--detector', default="HARRIS", help='Local feature detector (HARRIS, SIFT, ...)')
     parser.add_argument('-lf', '--descriptor', default="SIFT", help="Local feature descriptor")
-    parser.add_argument('-k', '--codebooksize', default=1000, help='Size of the codebook')
+    parser.add_argument('-k', '--codebooksize', type=int, default=1000, help='Size of the codebook')
     parser.add_argument('-cm', '--codebookmethod', default="MiniBatchKMeans", help="Codebook generation method")
-    parser.add_argument('-c', '--clusters', default=0, help='Number of image clusters')
+    parser.add_argument('-c', '--clusters',type=int, default=0, help='Number of image clusters')
     parser.add_argument('-ln', '--LNormalization', default=2, help="Codebook histogram normalization (0=none, 1=L1, 2=L2)")
-    parser.add_argument('-sx', '--SOMX', default=50, help='Number of horizontal units SOM')
-    parser.add_argument('-sy', '--SOMY', default=30, help='Number of vertical units SOM')
-    parser.add_argument('--debug', default=0, help='Debugging level')
+    parser.add_argument('-sx', '--SOMX', type=int, default=50, help='Number of horizontal units SOM')
+    parser.add_argument('-sy', '--SOMY', type=int, default=30, help='Number of vertical units SOM')
+    parser.add_argument('--debug', type=int, default=0, help='Debugging level')
 
     args = parser.parse_args()
 
