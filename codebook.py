@@ -88,19 +88,26 @@ class Codebook:
         """Codebook generation function which takes a list of features as input
         and returns codebook"""
 
-        # TODO: Add other codebook generation methods
+        #TODO: Add other codebook generation methods
 
-        # Import MiniBatchKMeans from sklearn package and hope that it is
-        # available :
-        from sklearn.cluster import MiniBatchKMeans
-        # Set parameters
-        mbk = MiniBatchKMeans(init='k-means++', n_clusters=self.codebooksize,
-            batch_size=self.codebooksize * 3, n_init=3, max_iter=50,
-            max_no_improvement=3, verbose=0, compute_labels=False)
-        # Cluster data points
-        mbk.fit(features)
-        self.codebook = mbk.cluster_centers_
-        #return mbk.cluster_centers_
+        if self.codebookmethod == "MiniBatchKMeans":
+            # Import MiniBatchKMeans from sklearn package and hope that it is
+            # available :
+            from sklearn.cluster import MiniBatchKMeans
+            # Set parameters
+            mbk = MiniBatchKMeans(init='k-means++', n_clusters=self.codebooksize,
+                batch_size=self.codebooksize * 3, n_init=3, max_iter=50,
+                max_no_improvement=3, verbose=0, compute_labels=False)
+            # Cluster data points
+            mbk.fit(features)
+            self.codebook = mbk.cluster_centers_
+        elif self.codebookmethod == "KMeans":
+            import scipy.cluster.vq
+            [codebook, err] = scipy.cluster.vq.kmeans(features, self.codebooksize)
+            self.codebook = codebook
+        else:
+            print("Unknown codebook method: %s" % self.codebookmethod)
+            1/0
 
         return self.codebook
 
