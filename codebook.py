@@ -182,46 +182,6 @@ class Codebook:
 class CodebookHistograms:
     """This class provides functions to generate codebook histograms
     and to normalise them etc"""
-    #
-    detector = ''
-    descriptor = ''
-    codebookmethod = ''
-    codebooksize = 0
-    #
-    histograms = []
-
-    def __init__(self, imgList=[], dataDir='', detector='hesaff',
-        descriptor='gloh', codebookmethod='som', codebooksize=10000):
-
-        # Parameters for the histograms
-        self.detector = detector
-        self.descriptor = descriptor
-        self.codebookmethod = codebookmethod
-        self.codebooksize = codebooksize
-
-    def load_imagelist_matlab(self, imgList=[], dataDir='', detector='hesaff',
-        descriptor='gloh', codebookmethod='som', codebooksize=10000):
-        #
-        for imgName in imgList.imageNames:
-            h = self.load_matlab(imgName, dataDir, detector, descriptor,
-                codebookmethod, str(codebooksize))
-            self.histograms.append(h)
-
-    def load_matlab(self, imgName, dataDir='', detector='hesaff',
-        descriptor='gloh', codebookmethod='som', codebooksize=10000):
-        #
-        filename = dataDir + '/codebookhistograms/' + imgName + '.' + \
-            detector + '.' + descriptor + '.' + codebookmethod + '.' + \
-            codebooksize + '.hist.mat'
-        print "codebooksize " + str(codebooksize)
-        if os.path.exists(filename):
-            data = scipy.io.loadmat(filename)
-            h = data.f
-        else:
-            h = numpy.zeros((1, 10000), dtype=numpy.int)
-            print "Warning: file " + imgName + " does not exist!!"
-
-        return h
 
     def generate(self, codebook, features):
         [N, d] = codebook.shape
