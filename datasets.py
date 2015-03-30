@@ -133,7 +133,12 @@ class ImageCollection:
                 imgPath = os.path.join(self.imgDir,imgFile)
                 if os.path.exists(imgPath):
                     # Extract local features from the image
-                    [f, d] = lf.extract(imgPath)
+                    try:
+                        [f, d] = lf.extract(imgPath)
+                    except:
+                        print(("Could not extract features from: %s" % imgPath))
+                        f = []
+                        d = numpy.zeros((0,128))
 
                     localfeaturefiledir = os.path.dirname(localfeaturefile)
 
@@ -159,8 +164,13 @@ class ImageCollection:
         # Initialize feature matrix
         features = numpy.zeros((0,0))
         # Read local features from each image in the ImageCollection
+        count = 0
         for imageName in self.imageNames:
-            if debuglevel > 0:
+            count = count + 1
+            # Print some progress information
+            if debuglevel == 1:
+                sys.stdout.write("Reading feature %d/%d\r" % (count, len(self.imageNames)))
+            if debuglevel > 2:
                 print("Feature matrix size: %d x %d" % (features.shape[0],
                                                         features.shape[1]))
             try:
@@ -192,12 +202,20 @@ class ImageCollection:
     # -------------------------------------------------------------------------
     def codebook_generate(self, debuglevel=0):
         """Generates a codebook"""
+        if debuglevel > 0:
+            print("Loading local features for codebook generation")
         features = self.localfeatures_read(debuglevel=debuglevel)
+        if debuglevel > 0:
+            print("Local features loaded. Feature matrix is %d x %d" %
+                                                        (features.shape[0],
+                                                        features.shape[1]))
         codebook = Codebook(codebookmethod=self.codebookmethod,
                             codebooksize=self.codebooksize)
-
+        if debuglevel > 0:
+            print("Generating codebook")
         codebook.generate(features)
-
+        if debuglevel > 0:
+            print("Codebook generation done.")
         self.codebook_save(codebook)
 
         return codebook
