@@ -183,9 +183,6 @@ class CodebookHistograms:
     """This class provides functions to generate codebook histograms
     and to normalise them etc"""
     #
-    imgList = []
-    dataDir = ''
-    #
     detector = ''
     descriptor = ''
     codebookmethod = ''
@@ -195,9 +192,6 @@ class CodebookHistograms:
 
     def __init__(self, imgList=[], dataDir='', detector='hesaff',
         descriptor='gloh', codebookmethod='som', codebooksize=10000):
-         # Paths and list of images
-        self.imgList = imgList
-        self.dataDir = dataDir
 
         # Parameters for the histograms
         self.detector = detector
