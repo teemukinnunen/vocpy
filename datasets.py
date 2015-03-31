@@ -308,14 +308,14 @@ class ImageCollection:
                                                     codebookhist))
                         except:
                             print("Did not work out as planned... dyiing...")
-                            1/0
+                            sys.exit(-1)
                     else:
                         try:
                             codebookhistograms = numpy.vstack((codebookhistograms,
                                                             codebookhist.transpose))
                         except:
                             print("Still failing.. dying..")
-                            1/0
+                            sys.exit(-1)
 
         return codebookhistograms
 

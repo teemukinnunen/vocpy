@@ -9,6 +9,7 @@
 import numpy
 import cv2
 import os
+import sys
 import scipy
 import scipy.cluster.vq
 from sklearn.cluster import KMeans
@@ -107,7 +108,7 @@ class Codebook:
             self.codebook = codebook
         else:
             print("Unknown codebook method: %s" % self.codebookmethod)
-            1/0
+            sys.exit(-1)
 
         return self.codebook
 
