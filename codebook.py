@@ -187,7 +187,7 @@ class CodebookHistograms:
     def generate(self, codebook, features):
         [N, d] = codebook.shape
         if features.size <= 1:
-            return numpy.zeros((N, 0))
+            return numpy.zeros((0, N))
 
         [hits, d] = scipy.cluster.vq.vq(features, codebook)
         [y, x] = numpy.histogram(hits, bins=range(0, N + 1))
