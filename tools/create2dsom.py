@@ -97,7 +97,12 @@ def main(argv):
         sys.stdout.write("Loading codebook histograms.. %d/%d\r" %
                             (imgid, N))
         cbhistogram = imageSet.codebookhistograms_load(imageSet.imageNames[imgid])
-        cbm[imgid, :] = cbhistogram
+        # Make sure that histogram is not empty
+        if cbhistogram.size > 0:
+            cbm[imgid, :] = cbhistogram
+        else:
+            print("Empty histogram for image %s" % imageSet.imageNames[imgid])
+
     print("\n\t * Done!")
 
     # Save because people typically hate to wait :)
