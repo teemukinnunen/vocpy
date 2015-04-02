@@ -43,7 +43,7 @@ def main(argv):
         imageSet.read_imagelist(args.imageList)
 
     print("Generating codebookhistograms")
-    imageSet.codebookhistograms_generate()
+    imageSet.codebookhistograms_generate(debuglevel=args.debug)
     print("DONE!")
 
 if __name__ == '__main__':
