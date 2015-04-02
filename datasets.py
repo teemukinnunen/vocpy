@@ -268,11 +268,20 @@ class ImageCollection:
         if numpy.size(codebook) == 0:
             codebook = self.codebook_load()
 
-        codebookhistograms = numpy.zeros((0, 0))
+        N = len(self.imageNames)
+        k = codebook.shape[0]
 
+        codebookhistograms = numpy.zeros((N, k))
+
+        count = 0
         for imageFile in self.imageNames:
+            count = count + 1
+
+            if debuglevel > 0:
+                sys.stdout.write('Generating codebook histograms (%d/%d)\r' % (count, len(self.imageNames)))
+
             # Try to load codebookhistogram
-            codebookhist= self.codebookhistograms_load(imageFile)
+            codebookhist = self.codebookhistograms_load(imageFile)
 
             # If codebookhistograms is not being loaded, we need to compute one
             if codebookhist is None:
@@ -289,30 +298,26 @@ class ImageCollection:
 
             # Stack codebookhistograms into a matrix
             if codebookhistograms.size == 0:
-                codebookhistograms = codebookhist
+                codebookhistograms[0, :] = codebookhist
             else:
                 try:
-                    codebookhistograms = numpy.vstack((codebookhistograms,
-                                                    codebookhist))
+                    codebookhistograms[count-1, :] = codebookhist
                 except:
                     print("Couldnt concatenate codebook histogram to feature matrix")
                     print(codebookhistograms.shape)
                     print(codebookhist.shape)
-                    print(codebook.codebooksize)
                     if codebookhist.size == 0:
-                        print("Codebookhistogram has no elements!! Which does not make any sense.")
-                        print("Changing codebookhistogram to 1 x CB size filled with zeros")
-                        codebookhist = numpy.zeros((1, codebookhistograms.shape[1]))
+                        print("Codebookhistogram is empty (%s)" % imageFile)
+                        print("Using codebookhistogram filled with zeroes")
+                        codebookhist = numpy.zeros((1, k))
                         try:
-                            codebookhistograms = numpy.vstack((codebookhistograms,
-                                                    codebookhist))
+                            codebookhistograms[count, :] = codebookhist
                         except:
                             print("Did not work out as planned... dyiing...")
                             sys.exit(-1)
                     else:
                         try:
-                            codebookhistograms = numpy.vstack((codebookhistograms,
-                                                            codebookhist.transpose))
+                            codebookhistograms[count, :] = codebookhist.transpose
                         except:
                             print("Still failing.. dying..")
                             sys.exit(-1)
