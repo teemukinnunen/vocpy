@@ -20,6 +20,7 @@ def main(argv):
     parser.add_argument('-il', '--imageList', default=None, help='Input image list file')
     parser.add_argument('-ip', '--detector', default="HARRIS", help='Local feature detector (HARRIS, SIFT, ...)')
     parser.add_argument('-lf', '--descriptor', default="SIFT", help="Local feature descriptor")
+    parser.add_argument('-o', '--outputfile', default=None, help="Write all local features to a single file")
     parser.add_argument('--debug', type=int, default=0, help="Debug level")
     args = parser.parse_args()
 
@@ -34,7 +35,10 @@ def main(argv):
         imageSet.read_imagelist(args.imageList)
 
     # Finally, extract local features from given images
-    imageSet.localfeatures_extract(debuglevel=args.debug)
+    if args.outputfile == None:
+        imageSet.localfeatures_extract(debuglevel=args.debug)
+    else:
+        imageSet.localfeatures_extract_to_bin(args.outputfile, args.debug)
 
 if __name__ == '__main__':
     main(sys.argv[1:])

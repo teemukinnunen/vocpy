@@ -115,10 +115,11 @@ class ImageCollection:
                                 imgFile)
         return filepath
 
-    def localfeatures_extract(self,debuglevel=0):
+    def localfeatures_extract(self, debuglevel=0):
         """Extract local features from a given imgDir"""
         imgIdx = 0
         nImgs = len(self.imageNames)
+
         for imgFile in self.imageNames:
             if debuglevel > 0:
                 sys.stdout.write("Processing image %d of %d images.\r" % (imgIdx+1, nImgs))
@@ -150,6 +151,7 @@ class ImageCollection:
 
                     numpy.save(localfeaturefile + '.desc', d)
                     numpy.save(localfeaturefile + '.key', f)
+
                 else:
                     if debuglevel > 0:
                         sys.stdout.write("\n")
@@ -158,6 +160,67 @@ class ImageCollection:
             imgIdx += 1
         if debuglevel > 0:
             print("\n\t * DONE!")
+
+    def localfeatures_extract_to_bin(self,  outputfile=None, debuglevel=0):
+        "Extract or load local features and save them into a single binary file"
+
+        nImgs = len(self.imageNames)
+        imgIdx = 0
+
+        if outputfile == None:
+            outputfile = os.path.join(self.dataDir,
+                                        'localfeatures',
+                                        'all_features_' + self.ipdetector +
+                                        '+' + self.lfdescriptor + '.bin')
+
+        # Get localfeature object for extracting local features
+        lf = LocalFeatures(self.ipdetector, self.lfdescriptor)
+
+        # Open outputfile for writing
+        if not os.path.exists(os.path.dirname(outputfile)):
+            os.makedirs(os.path.dirname(outputfile))
+        of = open(outputfile, 'wb')
+
+        # Write something already.. we need to fix these in the end
+        nFeaturesTotal = numpy.uint32(0)
+        nFeaturesTotal.tofile(of)
+        nDims = numpy.uint32(0)
+        nDims.tofile(of)
+
+        for imgFile in self.imageNames:
+            imgIdx = imgIdx + 1
+            imgPath = os.path.join(self.imgDir, imgFile)
+            if debuglevel > 0:
+                sys.stdout.write("Processing image %d of %d images.\r" % (imgIdx, nImgs))
+
+            localfeaturefile = self.gen_featurefile_path(imgFile)
+
+            d = numpy.zeros((0,128), dtype=numpy.float32)
+
+            # If the feature file already exists, read it
+            if os.path.exists(localfeaturefile + '.desc.npy'):
+                d = numpy.load(localfeaturefile + '.desc.npy')
+            # If the feature file does not exist, extract it
+            else:
+                # Extract local features from the image
+                try:
+                    [f, d] = lf.extract(imgPath)
+                except:
+                    print(("Could not extract features from: %s" % imgPath))
+
+            nFeatures = d.shape[0]
+            nDims = numpy.uint32(d.shape[1])
+            nFeaturesTotal = numpy.uint32(nFeaturesTotal + nFeatures)
+            data = numpy.array(d, dtype=numpy.float32)
+            data.tofile(of)
+
+        # Update the number of features and feature dims
+        of.seek(0,0)
+        nFeaturesTotal.tofile(of)
+        nDims.tofile(of)
+        of.close()
+
+        print("%d %dD features saved in %s" % (nFeaturesTotal, nDims, outputfile))
 
     def localfeatures_read(self, debuglevel=0):
         """Load local features which are already extracted and return them """
