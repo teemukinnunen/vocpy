@@ -104,13 +104,26 @@ class Codebook:
             self.codebook = mbk.cluster_centers_
         elif self.codebookmethod == "KMeans":
             import scipy.cluster.vq
-            [codebook, err] = scipy.cluster.vq.kmeans(features, self.codebooksize)
+            [codebook, label] = scipy.cluster.vq.kmeans2(features,
+                                                        self.codebooksize,
+                                                        iter=100,
+                                                        minit='points',
+                                                        missing='warn')
             self.codebook = codebook
         else:
             print("Unknown codebook method: %s" % self.codebookmethod)
             sys.exit(-1)
 
         return self.codebook
+
+    def compute_histogram(self, codebook, features):
+        [N, d] = codebook.shape
+        if features.size <= 1:
+            return numpy.zeros((N, 0))
+
+        [hits, d] = scipy.cluster.vq.vq(features, codebook)
+        [y, x] = numpy.histogram(hits, bins=range(0, N + 1))
+        return y
 
     @staticmethod
     def hkmeans(data, branching=100, depth=10, max_data_points=100000):

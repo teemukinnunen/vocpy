@@ -105,3 +105,36 @@ def read_news_value_ground_truth_csv(filename):
             else:
                 D[i,j] = -1
     return D
+
+def save_matrix_bin(filename, data):
+    "Saves given matrix (data) into a binary file"
+
+    rows = np.uint32(data.shape[0])
+    cols = np.uint32(data.shape[1])
+
+    if os.path.exists(os.path.dirname(filename)):
+        os.makedirs(os.path.dirname(filename))
+
+    # Open the file for writing in binary mode
+    f = open(filename, 'wb')
+
+    # Write file
+    rows.tofile(f)
+    cols.tofile(f)
+    data.tofile(f)
+
+    # Close the file
+    f.close()
+
+def read_matrix_bin(filename):
+    "Reads a matrix from a file and returns it"
+
+    f = open(filename, 'rb')
+
+    rows = np.fromfile(f, dtype=np.uint32, count=1)
+    cols = np.fromfile(f, dtype=np.uint32, count=1)
+    data = np.fromfile(f, dtype=np.float32)
+
+    data = data.reshape((rows,cols))
+
+    return data
