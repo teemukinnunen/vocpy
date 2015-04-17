@@ -331,10 +331,13 @@ class ImageCollection:
         if numpy.size(codebook) == 0:
             codebook = self.codebook_load()
 
+        # Initialize codebook histogram matrix
         N = len(self.imageNames)
         k = codebook.shape[0]
-
         codebookhistograms = numpy.zeros((N, k))
+
+        # Init codeebookhistogram object for computing histograms
+        Codebookhist = CodebookHistograms()
 
         count = 0
         for imageFile in self.imageNames:
@@ -353,7 +356,6 @@ class ImageCollection:
                 desc = numpy.load(localfeaturefile + '.desc.npy')
 
                 # Compute codebookhistogram
-                Codebookhist = CodebookHistograms()
                 codebookhist = Codebookhist.generate(codebook, desc)
 
                 # Store histogram
@@ -374,13 +376,13 @@ class ImageCollection:
                         print("Using codebookhistogram filled with zeroes")
                         codebookhist = numpy.zeros((1, k))
                         try:
-                            codebookhistograms[count, :] = codebookhist
+                            codebookhistograms[count-1, :] = codebookhist
                         except:
                             print("Did not work out as planned... dyiing...")
                             sys.exit(-1)
                     else:
                         try:
-                            codebookhistograms[count, :] = codebookhist.transpose
+                            codebookhistograms[count-1, :] = codebookhist.transpose
                         except:
                             print("Still failing.. dying..")
                             sys.exit(-1)
