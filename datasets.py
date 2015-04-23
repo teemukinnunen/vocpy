@@ -208,11 +208,13 @@ class ImageCollection:
                 except:
                     print(("Could not extract features from: %s" % imgPath))
 
-            nFeatures = d.shape[0]
-            nDims = numpy.uint32(d.shape[1])
-            nFeaturesTotal = numpy.uint32(nFeaturesTotal + nFeatures)
-            data = numpy.array(d, dtype=numpy.float32)
-            data.tofile(of)
+            # Make sure that some feature were extracted
+            if d is not None:
+                nFeatures = d.shape[0]
+                nDims = numpy.uint32(d.shape[1])
+                nFeaturesTotal = numpy.uint32(nFeaturesTotal + nFeatures)
+                data = numpy.array(d, dtype=numpy.float32)
+                data.tofile(of)
 
         # Update the number of features and feature dims
         of.seek(0,0)
