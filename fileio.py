@@ -7,6 +7,7 @@
 #------------------------------------------------------------------------------
 
 import os
+import sys
 import numpy as np
 import logging
 
@@ -50,6 +51,18 @@ def read_test_results_lf_test(resultfile):
     cbsizes = np.unique(cbsize)
 
     return [m, nclasses, cbsize, perf, methods, cbsizes]
+
+def read_configs_json(filepath):
+    "Reads a config file formatted in JSON format"
+    import json
+    if not os.path.exists(filepath):
+        print("Config file %s does not exist!" % filepath)
+        sys.exit(-1)
+
+    f = open(filepath, 'r')
+    configs = json.load(f)
+    f.close()
+    return configs
 
 class TestLog:
     filename = ''

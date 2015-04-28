@@ -58,9 +58,9 @@ codebook = codebook.generate(localfeatures)
 #
 print("Computing codebook histograms..")
 trainingFeatures = trainingSet.codebookhistograms_generate(codebook)
-#trainingFeatures = CodebookHistograms.normalise(trainingFeatures,2)
+trainingFeatures = CodebookHistograms.normalise(trainingFeatures,2)
 testingFeatures = testingSet.codebookhistograms_generate(codebook)
-#testingFeatures = CodebookHistograms.normalise(testingFeatures,2)
+testingFeatures = CodebookHistograms.normalise(testingFeatures,2)
 
 #
 print("Training a SVM classifier...")
@@ -76,11 +76,11 @@ print "Accuracy is: " + str(float((p==testGT).sum()) / float(len(p))) + \
       " with " + str(len(numpy.unique(trainGT))) + " classes."
 
 from sklearn.naive_bayes import MultinomialNB as bayes
-
+print("Training a Bayes classifier...")
 clf = bayes()
 clf.fit(trainingFeatures, trainGT)
 bayes(alpha=1.0, class_prior=None, fit_prior=True)
 p2 = clf.predict(testingFeatures)
-
+print("Testing the Bayes classifier...")
 print(("Accuracy is: " + str(float((p2==testGT).sum()) / float(len(p2))) + \
       " with " + str(len(numpy.unique(trainGT))) + " classes."))

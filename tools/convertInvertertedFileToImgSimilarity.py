@@ -67,12 +67,13 @@ def main(argv):
     # Number of images
     N = len(imageSet.imageNames)
 
+    # Read the inverted file
     filepath = os.path.join(args.dataDir,
                             'invertedfiles',
                             args.detector + '+' +
-                            args.descriptor +
+                            args.descriptor + '_' +
                             args.codebookmethod + '+' +
-                            str(args.codebooksize) + '.txt')
+                            str(args.codebooksize) + '.pkl')
     if os.path.exists(filepath):
         S = read_and_process_invertedfile(filepath, N)
     else:

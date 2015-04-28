@@ -31,11 +31,13 @@ class ImageCollection:
     def __init__(self,
                 imgDir='',
                 dataDir='',
+                imagelistfile=None,
                 ipdetector='FAST',
                 lfdescriptor='FREAK',
                 codebookmethod='MiniBatchKMeans',
                 codebooksize=1000,
-                histnormalisation='L2'):
+                histnormalisation='L2',
+                configfile = None):
         """ImageCollection holds information about the a collection of images +
         help user to make visual analysis for the collection. It stores all the
         temporary data into dataDir.
@@ -43,6 +45,7 @@ class ImageCollection:
         Parameters:
             imgdir                        - directory for the images
             dataDir                       - directory for temp data
+            imagelistfile                 - file containing a list of imgs
             ipdetector                    - local feature detector
             lfdescriptor                  - local feature descriptor
             codebookmethod                - codebook generation method
@@ -63,22 +66,63 @@ class ImageCollection:
         Class member variables
             imageNames                    - list of image names :)"""
 
-        self.imgDir = imgDir
-        self.dataDir = dataDir
-        # fix data dir if necessary
-        if not self.imgDir.endswith(os.path.sep):
-            self.imgDir = self.imgDir + os.path.sep
+        if configfile is None:
 
-        self.ipdetector = ipdetector
-        self.lfdescriptor = lfdescriptor
-        self.codebookmethod = codebookmethod
-        self.codebooksize = codebooksize
-        self.histnormalisation = histnormalisation
+            self.imgDir = imgDir
+            self.dataDir = dataDir
+            self.imagelistfile = imagelistfile
+
+            # fix data dir if necessary
+            if not self.imgDir.endswith(os.path.sep):
+                self.imgDir = self.imgDir + os.path.sep
+
+            self.ipdetector = ipdetector
+            self.lfdescriptor = lfdescriptor
+            self.codebookmethod = codebookmethod
+            self.codebooksize = codebooksize
+            self.histnormalisation = histnormalisation
+
+        else:
+            self.read_configs(configfile)
 
         self.imageNames = []
 
-        if len(self.imgDir) > 0:
+        ##
+        # Get a list of images
+        ##
+        # Read images from a text file
+        if self.imagelistfile is not None:
+                self.read_imagelist(self.imagelistfile)
+        # Get a list of images from the image directory
+        elif len(self.imgDir) > 0:
             self.imgdir_read()
+
+    # -------------------------------------------------------------------------
+    # Initialisation and setup functions
+    # -------------------------------------------------------------------------
+    def read_configs(self, configfile):
+        "Reads a config file and sets class variables based on the file"
+        import fileio
+        if configfile.endswith('.json'):
+            # Read configs
+            configs = fileio.read_configs_json(configfile)
+
+            # Store configs in the class member variables
+            self.imgDir = configs['imgDir']
+            self.dataDir = configs['dataDir']
+            self.imagelistfile = configs['imagelist']
+            self.ipdetector = configs['detector']
+            self.lfdescriptor = configs['descriptor']
+            self.codebookmethod = configs['codebookmethod']
+            self.codebooksize = int(configs['codebooksize'])
+
+            #print("imgdir: %s, datadir: %s, imglist: %s" % (self.imgDir,
+            #                                                self.dataDir,
+            #                                                self.imagelistfile))
+
+        else:
+            print("Unknown filetype for %s" % configfile)
+
 
     # -------------------------------------------------------------------------
     # Image directory functions
@@ -427,6 +471,40 @@ class ImageCollection:
             f = numpy.load(codebookhistfile)
             return f
 
+    def similaritymatrix_gen_filepath(self, imglistfile='', debuglevel=0):
+        "Generates a filepath for image similarity matrix"
+        if len(imglistfile) > 0:
+            imglistfile = '_' + os.path.basename(imglistfile)
+
+        simfile = os.path.join(self.dataDir,
+                            'similaritymatrices',
+                            self.ipdetector + '+' +
+                            self.lfdescriptor + '_' +
+                            self.codebookmethod + '+' +
+                            str(self.codebooksize) +
+                            imglistfile +'.npy')
+        return simfile
+
+    def similaritymatrix_load(self, imglistfile='', debuglevel=0):
+        "Loads an image similarity matrix from the datadir"
+        simfile = self.similaritymatrix_gen_filepath(imglistfile=imglistfile,
+                                                    debuglevel=debuglevel)
+        if not os.path.exists(simfile):
+            print("Image similarity matrix file does not exist: %s" % simfile)
+            return None
+
+        S = numpy.load(simfile)
+        return S
+
+    def similaritymatrix_save(self, S, imglistfile='', debuglevel=0):
+        "Saves an image similarity matrix in the datadir"
+        simfile = self.similaritymatrix_gen_filepath(imglistfile=imglistfile,
+                                                    debuglevel=debuglevel)
+
+        if not os.path.exists(os.path.dirname(simfile)):
+            os.makedirs(os.path.dirname(simfile))
+
+        numpy.save(simfile, S)
 
 class ImageAnnotations:
     """ImageAnnotations class helps user to use image directories as ground

@@ -1,9 +1,5 @@
 #!/usr/bin/env python2
-
 # -*- coding: utf-8 -*-
-
-NUMTHREADS = 4
-PICRES = 50
 
 import os
 import sys
@@ -14,39 +10,6 @@ import cPickle
 # Append vocpy scripts
 sys.path.append('..' + os.path.sep)
 from datasets import *
-
-# Import SOMPY
-#TODO: fix path if necessary ;)
-sys.path.append(os.path.join('..', '..', 'SOMPY'))
-from SOMPY import SOM
-
-def codebookhistogram_matrix_save(cbm, imgList, dataDir, detector, descriptor, codebookmethod, codebooksize):
-    "Saves codebook histograms matrix"
-
-    dataFile = os.path.join(dataDir, 'codehistograms_matrices',
-        detector + '+' + descriptor + codebookmethod + '+' + str(codebooksize))
-
-    if not os.path.exists(os.path.dirname(dataFile)):
-        os.makedirs(os.path.dirname(dataFile))
-
-    np.save(dataFile, cbm)
-
-    return 0
-
-
-def codebookhistogram_matrix_load(dataDir, detector, descriptor, codebookmethod, codebooksize):
-    "Loads codebook histograms matrix"
-
-    dataFile = os.path.join(dataDir, 'codehistograms_matrices',
-        detector + '+' + descriptor + codebookmethod + '+' + str(codebooksize))
-
-    if not os.path.exists(dataFile):
-        return None
-
-    cbm = np.load(dataFile)
-
-    return cbm
-
 
 def main(argv):
     """Main function for running extract features script"""
@@ -84,23 +47,26 @@ def main(argv):
 
     # Build inverted file based on codebook histograms
     for imgid in range(0, N):
-        #sys.stdout.write("\rGenerating inverted index.. %d/%d" %
-        #                    (imgid, N))
+        if args.debug > 0:
+            sys.stdout.write("\rGenerating inverted index.. %d/%d" %
+                                (imgid, N))
         cbhistogram = imageSet.codebookhistograms_load(imageSet.imageNames[imgid])
         # Add link from each
         idx = np.argwhere(cbhistogram > 0)
         print(idx)
         for codeid in idx:
-            #print("\nAdding image %05d to code %06d" % (imgid, codeid[0]))
             invertedfile[codeid[0]].append(imgid)
-    print("\t * Done!")
 
-    # Save codes
+    if args.debug > 0:
+        print("\t * Done!")
+
+    # Store the inverted file
     invertedfilepath = os.path.join(args.dataDir,
-                                    'invertedfiles',
-                                    args.detector + '+' + args.descriptor +
-                                    args.codebookmethod + '+' +
-                                    str(args.codebooksize) +'.txt')
+                            'invertedfiles',
+                            args.detector + '+' +
+                            args.descriptor + '_' +
+                            args.codebookmethod + '+' +
+                            str(args.codebooksize) + '.pkl')
 
     if not os.path.exists(os.path.dirname(invertedfilepath)):
         os.makedirs(os.path.dirname(invertedfilepath))
@@ -109,14 +75,6 @@ def main(argv):
     f = open(invertedfilepath, 'wb')
     cPickle.dump(invertedfile, f)
     f.close()
-
-    #for codeid in range(0,args.codebooksize):
-    #    print("Codeid: %06d len: %d" % (codeid, len(invertedfile[codeid])))
-    #    for lid in invertedfile[codeid]:
-    #        f.write("%d " % lid)
-    #    f.write("\n")
-
-    #print(invertedfile)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
