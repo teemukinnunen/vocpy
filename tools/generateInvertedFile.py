@@ -53,7 +53,6 @@ def main(argv):
         cbhistogram = imageSet.codebookhistograms_load(imageSet.imageNames[imgid])
         # Add link from each
         idx = np.argwhere(cbhistogram > 0)
-        print(idx)
         for codeid in idx:
             invertedfile[codeid[0]].append(imgid)
 
