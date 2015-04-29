@@ -102,14 +102,21 @@ class Codebook:
             # Cluster data points
             mbk.fit(features)
             self.codebook = mbk.cluster_centers_
+
         elif self.codebookmethod == "KMeans":
-            import scipy.cluster.vq
-            [codebook, label] = scipy.cluster.vq.kmeans2(features,
-                                                        self.codebooksize,
-                                                        iter=100,
-                                                        minit='points',
-                                                        missing='warn')
-            self.codebook = codebook
+            km = KMeans(n_clusters=self.codebooksize,
+                        init='k-means++',
+                        n_init=3,
+                        max_iter=100,
+                        tol=0.0001,
+                        precompute_distances='auto',
+                        verbose=0,
+                        random_state=None,
+                        copy_x=True,
+                        n_jobs=-1)
+            km.fit(features)
+            self.codebook = km.cluster_centers_
+
         else:
             print("Unknown codebook method: %s" % self.codebookmethod)
             sys.exit(-1)
